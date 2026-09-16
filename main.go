@@ -35,7 +35,6 @@ func main() {
 
 func game(attempts int, randrange int) (win bool, x int) {
 	random := rand.IntN(randrange)
-	fmt.Println(random)
 	nums := make([]int, 0, attempts)
 	for x < attempts {
 		x++
