@@ -22,7 +22,7 @@ func main() {
 	for {
 		var again string
 		attempts, randrange := selectDifficulty()
-		fmt.Printf("Игра 'Угадай число' - от 1 до %d началась!\nУгадайте число за %d попыток!\n", randrange-1, attempts)
+		fmt.Printf("Игра 'Угадай число' - от 1 до %d началась!\nУгадайте число за %d попыток!\n", randrange, attempts)
 		win, numAttempts := game(attempts, randrange)
 		saveResult(win, numAttempts)
 		fmt.Print("Сыграть ещё раз? (y-да) ")
@@ -34,14 +34,13 @@ func main() {
 }
 
 func game(attempts int, randrange int) (win bool, x int) {
-	random := rand.IntN(randrange)
+	random := randomNumber(randrange)
 	nums := make([]int, 0, attempts)
 	for x < attempts {
 		x++
-		num := getUserInput()
+		num := getUserInput(x)
 		nums = append(nums, num)
-		if random == num {
-			win = true
+		if ifWin(random, num, &win) {
 			break
 		}
 		printHint(random, num)
@@ -61,25 +60,26 @@ func game(attempts int, randrange int) (win bool, x int) {
 func printHint(random, num int) {
 	dif := random - num
 	if dif <= 5 && dif >= 0 {
-		color.Yellow("🔥Горячо, Секретное число больше👆")
+		fmt.Println("🔥Горячо, Секретное число больше👆")
 	} else if dif >= -5 && dif <= 0 {
-		color.Yellow("🔥Горячо, Секретное число меньше👇")
+		fmt.Println("🔥Горячо, Секретное число меньше👇")
 	} else if dif <= 15 && dif >= 0 {
-		color.Yellow("🙂Тепло, Секретное число больше👆")
+		fmt.Println("🙂Тепло, Секретное число больше👆")
 	} else if dif >= -15 && dif <= 0 {
-		color.Yellow("🙂Тепло, Секретное число меньше👇")
+		fmt.Println("🙂Тепло, Секретное число меньше👇")
 	} else if random > num {
-		color.Yellow("❄️Холодно, Секретное число больше👆")
+		fmt.Println("❄️Холодно, Секретное число больше👆")
 	} else {
-		color.Yellow("❄️Холодно, Секретное число меньше👇")
+		fmt.Println("❄️Холодно, Секретное число меньше👇")
 	}
 }
 
-func getUserInput() (num int) {
+func getUserInput(x int) (num int) {
 	var input string
 	var err error
 	for {
-		fmt.Print("\nВведите число ")
+		color.Yellow("\nПопытка номер %d", x)
+		fmt.Print("Введите число ")
 		fmt.Scanln(&input)
 		num, err = strconv.Atoi(input)
 		if err == nil {
@@ -99,13 +99,13 @@ func selectDifficulty() (attempts, randrange int) {
 		switch difficulty {
 		case "1":
 			attempts = 15
-			randrange = 51
+			randrange = 50
 		case "2":
 			attempts = 10
-			randrange = 101
+			randrange = 100
 		case "3":
 			attempts = 5
-			randrange = 151
+			randrange = 200
 		default:
 			fmt.Println("Введена неверная сложность")
 		}
@@ -116,10 +116,24 @@ func selectDifficulty() (attempts, randrange int) {
 	return attempts, randrange
 }
 
+func randomNumber(randrange int) (random int) {
+	random = rand.IntN(randrange) + 1
+	return random
+}
+
+func ifWin(random int, num int, win *bool) bool {
+	if random == num {
+		*win = true
+		return true
+	} else {
+		return false
+	}
+}
+
 func saveResult(win bool, numAttempts int) {
 	var id int
 	var history []GameResult
-	file, err := os.ReadFile("stats.json")
+	file, err := os.ReadFile("results.json")
 	if err == nil && len(file) > 0 {
 		err = json.Unmarshal(file, &history)
 		if err != nil {
@@ -143,7 +157,7 @@ func saveResult(win bool, numAttempts int) {
 		return
 	}
 
-	err = os.WriteFile("stats.json", jsonData, 0644)
+	err = os.WriteFile("results.json", jsonData, 0644)
 	if err != nil {
 		fmt.Println("Ошибка записи в файл:", err)
 		return
